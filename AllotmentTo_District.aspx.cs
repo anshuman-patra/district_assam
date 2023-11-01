@@ -31,7 +31,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
     #endregion
 
 
-    
+
 
     protected void Page_Load(object sender, EventArgs e)
     {
@@ -54,7 +54,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                 hfFirstLogin.Value = objUserLoginDetails.FirstLogin;
                 hfSchemeCode.Value = ConfigurationManager.AppSettings["KeySchemeCode"].ToString();
                 lblDept.Text = hfDeptName.Value;
-                if ((hfUserType.Value == "I" ) && hfFirstLogin.Value == "N")
+                if ((hfUserType.Value == "I") && hfFirstLogin.Value == "N")
                 {
                     //CalendarExtender1.OnClientShown = this.ID + "onCheckForPastDate";
                     //CalendarExtender1.OnClientHidden = this.ID + "onCheckForFutureDate";
@@ -82,7 +82,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
         {
             db.CreateInParameters(2);
             db.AddInParameters(0, "@office_code", office_code);
-            db.AddInParameters(1, "@Fn_Year", ddlYear.SelectedValue);
+            db.AddInParameters(1, "@Fn_Year", hfF_Year.Value);
             db.CreateOutParameters(3);
             db.AddOutParameters(0, "@available_amt", 1, 100);
             db.AddOutParameters(1, "@total_allotment", 1, 100);
@@ -92,11 +92,62 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
             string Avail_amt = db.outParameters[0].Value.ToString();
             string total_amt = db.outParameters[1].Value.ToString();
             db.Close();
-           
-                lbl_totalAlt_Balance.Text = total_amt;
-                lbl_AvailAlt_Balance.Text = Avail_amt;
+
+            lbl_totalAlt_Balance.Text = total_amt;
+            lbl_AvailAlt_Balance.Text = Avail_amt;
             HftotalAlt_Balance.Value = lbl_totalAlt_Balance.Text;
             HfAvailAlt_Balance.Value = lbl_AvailAlt_Balance.Text;
+        }
+        catch (ApplicationException exception)
+        {
+            ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('" + exception.Message + "');", true);
+        }
+        catch (Exception ex)
+        {
+            ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Your request could not be completed due to exception. Please intimate technical team for rectification!');", true);
+            string message = ExceptionHandler.CreateErrorMessage(ex);
+            ExceptionHandler.WriteLog(message);
+            ExceptionHandler.WriteException(ex.Message);
+        }
+        finally
+        {
+
+            dsHeadwiseDtls.Clear();
+            dsHeadwiseDtls.Dispose();
+        }
+    }
+    protected void AvailAlot_Balance(string office_code, decimal altamt)
+    {
+        DataSet dsHeadwiseDtls = new DataSet();
+        try
+        {
+            db.CreateInParameters(2);
+            db.AddInParameters(0, "@office_code", office_code);
+            db.AddInParameters(1, "@Fn_Year", hfF_Year.Value);
+            db.CreateOutParameters(3);
+            db.AddOutParameters(0, "@available_amt", 1, 100);
+            db.AddOutParameters(1, "@total_allotment", 1, 100);
+            db.AddOutParameters(2, "@exep_Amt", 1, 100);
+            db.Open();
+            dsHeadwiseDtls = db.ExecuteDataSet(CommandType.StoredProcedure, "SNA_retrive_amt_district");
+            string Avail_amt = db.outParameters[0].Value.ToString();
+            string total_amt = db.outParameters[1].Value.ToString();
+            db.Close();
+            decimal totalamt = Convert.ToDecimal(Avail_amt);
+            decimal avil_Amt = totalamt - altamt;
+
+            lbl_totalAlt_Balance.Text = total_amt;
+            lbl_AvailAlt_Balance.Text = avil_Amt.ToString();
+            HftotalAlt_Balance.Value = lbl_totalAlt_Balance.Text;
+            if (Avail_amt != "")
+            {
+                HfAvailAlt_Balance.Value = lbl_AvailAlt_Balance.Text;
+            }
+            else
+            {
+                HfAvailAlt_Balance.Value = "0.00000";
+            }
+
         }
         catch (ApplicationException exception)
         {
@@ -229,7 +280,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
     }
     protected void rblOfficeTypeH_Changed(object sender, EventArgs e)
     {
-        
+
         if (rblOfficeTypeH.SelectedValue == "D")
         {
             ViewState["OfficeType"] = "D";
@@ -267,7 +318,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                 }
                 else if (rblOfficeTypeH.SelectedValue == "D" || rblOfficeTypeH.SelectedValue == "B")
                 {
-                    strQry = "SELECT district_code,district_name FROM MASTER_DISTRICT WHERE district_code!='1800'  ORDER BY district_name";
+                    strQry = "SELECT district_code,district_name FROM MASTER_DISTRICT WHERE district_code!='`1800'  ORDER BY district_name";
                 }
             }
             this.db.Open();
@@ -301,9 +352,9 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
         {
             this.db.Open();
             if (rblOfficeTypeH.SelectedValue == "D")
-                dsDistrict = this.db.ExecuteDataSet(CommandType.Text, "SELECT district_code,district_name FROM MASTER_DISTRICT ORDER BY district_name");//WHERE district_code!='2400' 
+                dsDistrict = this.db.ExecuteDataSet(CommandType.Text, "SELECT district_code,district_name FROM MASTER_DISTRICT ORDER BY district_name");//WHERE district_code!='1800' 
             else
-                dsDistrict = this.db.ExecuteDataSet(CommandType.Text, "SELECT district_code,district_name FROM MASTER_DISTRICT WHERE district_code!='2400'  ORDER BY district_name");
+                dsDistrict = this.db.ExecuteDataSet(CommandType.Text, "SELECT district_code,district_name FROM MASTER_DISTRICT WHERE district_code!='1800'  ORDER BY district_name");
             this.ddlDistrict.DataSource = dsDistrict;
             this.ddlDistrict.DataValueField = "district_code";
             this.ddlDistrict.DataTextField = "district_name";
@@ -459,7 +510,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
             //    OfficeType = "B";
             //    OfficeCode = ddlBlock.SelectedValue;
             //}
-            if(rblOfficeTypeH.SelectedValue=="D")
+            if (rblOfficeTypeH.SelectedValue == "D")
             {
                 GetHeadwise_OB_Dtls(ddlYear.SelectedValue, hfDeptCode.Value, ddlScheme.SelectedValue);
             }
@@ -543,7 +594,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
             dsHeadwiseDtls.Dispose();
         }
     }
-   
+
     protected void GetDistwise_OB_Dtls()
     {
         string OfficeCode = "";
@@ -573,14 +624,14 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
             Regex regDept = new Regex(@"^\d{2}$");
             Regex regYear = new Regex(@"^\d{4}-\d{2}$");
             db.Open();
-            SQL = "select t1.dist_code,t1.district_name,ISNULL(t2.Allotment_Amt,0.00000) 'amt',ISNULL(t3.ac_amt,0.00000)'Action_amt',0.00000 as blank_amt from (select district_code+'00' 'dist_code',district_name from MASTER_DISTRICT with(nolock) where district_code!='1800') as t1 " +
+            SQL = "select t1.dist_code,t1.district_name,ISNULL(t2.Allotment_Amt,0.00000) 'amt',ISNULL(t3.ac_amt,0.00000)'Action_amt',0.00000 as blank_amt from (select district_code+'00' 'dist_code',district_name from MASTER_DISTRICT with(nolock) where district_code!=1800') as t1 " +
                 "left join(select Office_Code, Allotment_Amt from SNA_Allotment with(nolock) where ProgramName is null) as t2 on t1.dist_code = t2.Office_Code " +
                 "left join(select sum(AAP_Amt)'ac_amt' ,Dept_Code,Scheme_Code,F_Year,Office_Code from SNA_AnnualActionPlan_ProgrammeWise_Dtls with(nolock) group by Dept_Code,Scheme_Code,F_Year,Office_Code) as t3 on t1.dist_code = t3.Office_Code  ";
             dsDistwiseDtls = db.ExecuteDataSet(CommandType.Text, SQL);
             db.Close();
             if (dsDistwiseDtls.Tables[0].Rows.Count > 0)
             {
-                
+
                 gdv_dist.DataSource = dsDistwiseDtls;
                 gdv_dist.DataBind();
                 panel_dist.Visible = true;
@@ -664,14 +715,14 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                 Regex regSch = new Regex(@"^\d{3}$");
                 Regex regOff = new Regex(@"^\d{6}$");
                 Regex regYear = new Regex(@"^\d{4}-\d{2}$");
-               
+
                 string dept = hfDeptCode.Value;
                 string sch = ddlScheme.SelectedValue;
                 string fyear = ddlYear.SelectedValue;
                 string OfficeCode = hfOfficeCode.Value;
                 string OfficeType = "";
-               // Covert_To_DB_Date_Format_MMDDYYYY(pstrDate: txt_date.Text);
-                
+                // Covert_To_DB_Date_Format_MMDDYYYY(pstrDate: txt_date.Text);
+
                 if (rblOfficeTypeH.SelectedValue == "H")
                 {
                     OfficeType = "H";
@@ -934,12 +985,13 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
         {
             decimal avail_balnce = decimal.Parse(HfAvailAlt_Balance.Value);
             decimal tobeAllot = decimal.Parse(lblAnnualActionPlanAmt.Text) - decimal.Parse(lblAll4QuaterAmt.Text);
-            if (decimal.Parse(txtAAP_Amt.Text) > tobeAllot)
-            {
-                ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Allotment must not be grater than action plan  you can only allot " + tobeAllot.ToString() + " lakhs!');", true);
-                txtAAP_Amt.Text = "0.00000";
-            }
-            else if (decimal.Parse(txtAAP_Amt.Text) > avail_balnce)
+            //if (decimal.Parse(txtAAP_Amt.Text) > tobeAllot)
+            //{
+            //    ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Allotment must not be grater than action plan  you can only allot " + tobeAllot.ToString() + " lakhs!');", true);
+            //    txtAAP_Amt.Text = "0.00000";
+            //}
+            //else
+            if (decimal.Parse(txtAAP_Amt.Text) > avail_balnce)
             {
                 ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Allotment must not be grater than Available Balance  you can only allot " + avail_balnce.ToString() + " lakhs!');", true);
                 txtAAP_Amt.Text = "0.00000";
@@ -985,6 +1037,9 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
             }
         }
         lblfblank_Amt.Text = SanctionAmt.ToString();
+        decimal amt = Convert.ToDecimal(lblfblank_Amt.Text);
+        AvailAlot_Balance(office_code: hfOfficeCode.Value, altamt: amt);
+
 
     }
     protected decimal ConvertText_To_Decimal(string value)
@@ -1009,12 +1064,12 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
 
             AnnualActionPlanDistAmt += DataBinder.Eval(e.Row.DataItem, "Action_amt").ToString() == "" ? 0 : Convert.ToDecimal(DataBinder.Eval(e.Row.DataItem, "Action_amt").ToString());
             Alt_distAmt += DataBinder.Eval(e.Row.DataItem, "amt").ToString() == "" ? 0 : Convert.ToDecimal(DataBinder.Eval(e.Row.DataItem, "amt").ToString());
-            
+
 
         }
         if (e.Row.RowType == DataControlRowType.Footer)
         {
-            
+
             Label lblfdistAnnualActionPlanAmt = (Label)e.Row.FindControl("lblfdistAnnualActionPlanAmt");
             Label lblfAltAmt = (Label)e.Row.FindControl("lblfAltAmt");
 
@@ -1023,7 +1078,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
 
             lblfdistAnnualActionPlanAmt.Text = AnnualActionPlanDistAmt.ToString();
             lblfAltAmt.Text = Alt_distAmt.ToString();
-            
+
         }
     }
     void calculateTotalDistAAP_Amt()
@@ -1069,7 +1124,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                 ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Allotment must not be grater than action plan  you can only allot " + tobeAllot.ToString() + " lakhs!');", true);
                 txtDistAAP_Amt.Text = "0.00000";
             }
-           else if (decimal.Parse(txtDistAAP_Amt.Text) > avail_balnce)
+            else if (decimal.Parse(txtDistAAP_Amt.Text) > avail_balnce)
             {
                 ScriptManager.RegisterClientScriptBlock(this.Page, this.Page.GetType(), "asyncPostBack", "alert('Allotment must not be grater than Available Balance  you can only allot " + avail_balnce.ToString() + " lakhs!');", true);
                 txtDistAAP_Amt.Text = "0.00000";
@@ -1178,7 +1233,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
 
                         //}
                         Label lbldistCode = (Label)gr.FindControl("lbldistCode");
-                       
+
 
                         TextBox txtDistAAP_Amt = (TextBox)gr.FindControl("txtDistAAP_Amt");
                         if (txtDistAAP_Amt.Text.Trim() != "" && txtDistAAP_Amt.Text.Trim() != "0.00000")
@@ -1192,7 +1247,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                                 dr["F_Year"] = ddlYear.SelectedItem.Value;
                                 dr["Office_Code"] = lbldistCode.Text;
                                 dr["Office_Type"] = OfficeType;
-                               
+
 
                                 if (Decimal.TryParse(txtDistAAP_Amt.Text.Trim(), out id))
                                 {
@@ -1228,7 +1283,7 @@ public partial class NHM_Allotment_AllotmentTo_District : System.Web.UI.Page
                     db.AddInParameters(1, "@Scheme_Code", ddlScheme.SelectedItem.Value);
                     db.AddInParameters(2, "@Office_Code", OfficeCode);
                     db.AddInParameters(3, "@Fn_Year", ddlYear.SelectedItem.Value);
-                  
+
                     db.AddInParameters(4, "@Entry_By", hfUserID.Value);
                     db.AddInParameters(5, "@XmlString", XmlFormat);
                     db.CreateOutParameters(1);
